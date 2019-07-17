@@ -1,9 +1,10 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
-const { parse } = require('querystring');
+const querystring = require('querystring');
 
 
-function processApiResponse(res, tableauServer, username) {
+function processApiResponse(res, tableauServer, username, site) {
     let data = {
         ticket: '<ticket for \'' + username + '\'>'
     };
@@ -20,7 +21,7 @@ function processRequest(req, callback) {
         chunks.push(chunk);
     }).on('end', () => {
         let body = Buffer.concat(chunks).toString();
-        callback(parse(body));
+        callback(querystring.parse(body));
     });
 }
 
@@ -32,21 +33,27 @@ http.createServer(function (req, res) {
            res.end(contents);
            console.log('200 GET / - ' + contents.length);
        } else {
-           res.writeHead(404)
-           res.end("Not Found");
+           res.writeHead(404);
+           res.end('Not Found');
            console.log('404 GET ' + req.url);
        }
    } else if (req.method === 'POST') {
        if (req.url === '/api') {
            processRequest(req, function (data) {
-               console.log(data);
+               let site = null;
+               console.log(' => ' + JSON.stringify(data));
 
                let url = new URL(data['share_link']);
-               processApiResponse(res, url.hostname, data['username']);
+               if (url.pathname.startsWith('/t/')) {
+                   let tokens = url.pathname.split('/');
+                   site = tokens[2];
+               }
+
+               processApiResponse(res, url.protocol + "//" + url.hostname, data['username'], site);
            });
        } else {
-           res.writeHead(404)
-           res.end("Not Found");
+           res.writeHead(404);
+           res.end('Not Found');
            console.log('404 POST ' + req.url);
        }
    } else {

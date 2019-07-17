@@ -20,7 +20,7 @@ http.createServer(function (req, res) {
            res.end(contents);
            console.log('200 GET / - ' + contents.length);
        } else if (req.url == '/api') {
-	       processApiResponse(res, "localhost", "smith");
+	       processApiResponse(res, "http://localhost", "smith");
        } else {
            res.writeHead(404)
            res.end("Not Found");

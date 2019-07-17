@@ -6,16 +6,15 @@ const querystring = require('querystring');
 
 function processApiResponse(res, tableauServer, username, site) {
     let url = new URL(tableauServer + '/trusted');
-    let body = querystring.stringify(
-        {
-            "username": username,
-        }
-    );
+    let body = {
+        username: username
+    };
     if (site) {
-        body['site'] = site;
+        body['target_site'] = site;
     }
 
-    console.log(' => POST ' + url + ' ' + body);
+    let postData = querystring.stringify(body);
+    console.log(' => POST ' + url + ' ' + postData);
 
     let module = http;
     if (url.protocol === 'https:') {
@@ -27,8 +26,7 @@ function processApiResponse(res, tableauServer, username, site) {
         hostname: url.hostname,
         path: '/trusted',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': body.length
+            'Content-Type': 'application/x-www-form-urlencoded'
         }
     }, function (tableauServerResponse) {
         let ticketData = '';
@@ -51,7 +49,7 @@ function processApiResponse(res, tableauServer, username, site) {
         console.log('ERROR: ' + error);
     });
 
-    req.write(body);
+    req.write(postData);
     req.end();
 }
 
@@ -74,7 +72,7 @@ http.createServer(function (req, res) {
            console.log('200 GET / - ' + contents.length);
        } else {
            res.writeHead(404);
-           res.end("Not Found");
+           res.end('Not Found');
            console.log('404 GET ' + req.url);
        }
    } else if (req.method === 'POST') {
@@ -86,14 +84,14 @@ http.createServer(function (req, res) {
                let url = new URL(data['share_link']);
                if (url.pathname.startsWith('/t/')) {
                    let tokens = url.pathname.split('/');
-                   site = tokens[1];
+                   site = tokens[2];
                }
 
                processApiResponse(res, url.protocol + "//" + url.hostname, data['username'], site);
            });
        } else {
            res.writeHead(404);
-           res.end("Not Found");
+           res.end('Not Found');
            console.log('404 POST ' + req.url);
        }
    } else {
